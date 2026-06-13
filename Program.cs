@@ -1,3 +1,6 @@
+var builder = WebApplication.CreateBuilder(args);
+var app = builder.Build();
+
 app.MapGet("/elano_95_mail_ru", (string? x, string? y) =>
 {
     if (!long.TryParse(x, out var a) ||
