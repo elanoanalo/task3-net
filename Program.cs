@@ -1,27 +1,11 @@
-using System.Globalization;
-
 var builder = WebApplication.CreateBuilder(args);
 var app = builder.Build();
 
-app.MapGet("/elano_95_mail_ru", (HttpContext context) =>
+// .NET сам автоматически возьмет x и y из ссылки и переведет в double
+app.MapGet("/elano_95_mail_ru", (double x, double y) =>
 {
-    // Безопасно вытягиваем x и y из запроса, игнорируя региональные стандарты (точки/запятые)
-    string? xQuery = context.Request.Query["x"];
-    string? yQuery = context.Request.Query["y"];
-
-    if (double.TryParse(xQuery, CultureInfo.InvariantCulture, out double x) &&
-        double.TryParse(yQuery, CultureInfo.InvariantCulture, out double y))
-    {
-        // Считаем НОК (Наименьшее общее кратное)
-        double lcm = CalculateLCM(x, y);
-        
-        // Возвращаем результат в виде строки без лишних символов
-        return context.Response.WriteAsync(lcm.ToString(CultureInfo.InvariantCulture));
-    }
-
-    // Если что-то пошло не так, возвращаем ошибку, чтобы сразу это увидеть
-    context.Response.StatusCode = 400;
-    return context.Response.WriteAsync("Ошибка: передайте числа x и y");
+    double lcm = CalculateLCM(x, y);
+    return Results.Text(lcm.ToString(), "text/plain", System.Text.Encoding.UTF8);
 });
 
 // Метод поиска НОД
