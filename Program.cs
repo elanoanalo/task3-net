@@ -1,49 +1,38 @@
-using System.Globalization;
+using System.Numerics;
 
 var builder = WebApplication.CreateBuilder(args);
 var app = builder.Build();
 
-// Настраиваем роут-шаблон, который примет любой вложенный путь, лишь бы в конце было elano_95_mail_ru
 app.MapGet("{*url}", (HttpContext context) =>
 {
-    var path = context.Request.Path.Value ?? "";
-    
-    // Проверяем, заканчивается ли вызванный URL на твою почту
+    // 1. Более надежная проверка пути (игнорируем слэш в конце)
+    var path = context.Request.Path.Value?.TrimEnd('/') ?? "";
     if (!path.EndsWith("elano_95_mail_ru", StringComparison.OrdinalIgnoreCase))
     {
-        context.Response.StatusCode = 404;
-        return Task.CompletedTask;
+        return Results.NotFound();
     }
 
-    string? x = context.Request.Query["x"];
-    string? y = context.Request.Query["y"];
+    // 2. Читаем параметры
+    string? xStr = context.Request.Query["x"];
+    string? yStr = context.Request.Query["y"];
 
-    if (string.IsNullOrEmpty(x) || string.IsNullOrEmpty(y) ||
-        !double.TryParse(x, CultureInfo.InvariantCulture, out double numX) ||
-        !double.TryParse(y, CultureInfo.InvariantCulture, out double numY) ||
-        numX <= 0 || numY <= 0 || numX % 1 != 0 || numY % 1 != 0)
+    // 3. Используем BigInteger для исключения потери точности и переполнения
+    // BigInteger.TryParse не пропустит дробные числа (например, 1.5), что нам и нужно
+    if (BigInteger.TryParse(xStr, out var x) && 
+        BigInteger.TryParse(yStr, out var y) && 
+        x > 0 && y > 0)
     {
-        return context.Response.WriteAsync("NaN");
+        // НОК(x, y) = (x * y) / НОД(x, y)
+        // Чтобы избежать лишних огромных чисел при умножении, сначала делим
+        var gcd = BigInteger.GreatestCommonDivisor(x, y);
+        var lcm = (x / gcd) * y;
+
+        // 4. Results.Text автоматически ставит Content-Type: text/plain; charset=utf-8
+        return Results.Text(lcm.ToString(), "text/plain");
     }
 
-    long a = (long)numX;
-    long b = (long)numY;
-
-    long gcd(long n1, long n2)
-    {
-        while (n2 != 0)
-        {
-            var t = n2;
-            n2 = n1 % n2;
-            n1 = t;
-        }
-        return n1;
-    }
-
-    long lcm = (a / gcd(a, b)) * b;
-
-    // Возвращаем строго строку, без лишних оберток фреймворка
-    return context.Response.WriteAsync(lcm.ToString());
+    // Если не натуральное число (0, отрицательное, дробное или текст)
+    return Results.Text("NaN", "text/plain");
 });
 
 app.Run();
