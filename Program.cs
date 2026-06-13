@@ -7,7 +7,8 @@ app.MapGet("/elano_95_mail_ru", (string? x, string? y) =>
         !long.TryParse(y, out var b) ||
         a <= 0 || b <= 0)
     {
-        return "NaN";
+        // Возвращаем NaN как чистый текст
+        return Results.Text("NaN", "text/plain", System.Text.Encoding.UTF8);
     }
 
     long gcd(long a, long b)
@@ -23,7 +24,8 @@ app.MapGet("/elano_95_mail_ru", (string? x, string? y) =>
 
     long lcm = (a / gcd(a, b)) * b;
 
-    return lcm.ToString();
+    // Возвращаем число как чистый текст, чтобы бот не видел лишних кавычек или пробелов
+    return Results.Text(lcm.ToString(), "text/plain", System.Text.Encoding.UTF8);
 });
 
 app.Run();
