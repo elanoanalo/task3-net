@@ -3,16 +3,17 @@ var app = builder.Build();
 
 app.MapGet("/", () => "Server is running");
 
-app.MapGet("/elano_95_mail_ru", (long? x, long? y) =>
+app.MapGet("/elano_95_mail_ru", (string? x, string? y) =>
 {
-    if (x == null || y == null)
+    if (!long.TryParse(x, out long a) ||
+        !long.TryParse(y, out long b) ||
+        a <= 0 ||
+        b <= 0)
+    {
         return Results.Text("NaN");
+    }
 
-    if (x <= 0 || y <= 0)
-        return Results.Text("NaN");
-
-    long lcm = CalculateLCM(x.Value, y.Value);
-
+    long lcm = CalculateLCM(a, b);
     return Results.Text(lcm.ToString());
 });
 
