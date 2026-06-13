@@ -1,49 +1,46 @@
-using Microsoft.AspNetCore.Mvc;
+using System.Globalization;
 
 var builder = WebApplication.CreateBuilder(args);
 var app = builder.Build();
 
-// ТВОЙ ЭНДПОИНТ (ВЕБ-МЕТОД)
-// ЗАМЕНИ "имя_фамилия_домен_com" на свой email, где точки и собачка заменены на '_'
-app.MapGet("/elano_95_mail_ru", ([FromQuery] string? x, [FromQuery] string? y) =>
+app.MapGet("/elano_95_mail_ru", (HttpContext context) =>
 {
-    // 1. Проверяем, пришли ли вообще числа и можно ли их распарсить
-    if (!long.TryParse(x, out long numX) || !long.TryParse(y, out long numY))
+    // Безопасно вытягиваем x и y из запроса, игнорируя региональные стандарты (точки/запятые)
+    string? xQuery = context.Request.Query["x"];
+    string? yQuery = context.Request.Query["y"];
+
+    if (double.TryParse(xQuery, CultureInfo.InvariantCulture, out double x) &&
+        double.TryParse(yQuery, CultureInfo.InvariantCulture, out double y))
     {
-        return Results.Text("NaN");
+        // Считаем НОК (Наименьшее общее кратное)
+        double lcm = CalculateLCM(x, y);
+        
+        // Возвращаем результат в виде строки без лишних символов
+        return context.Response.WriteAsync(lcm.ToString(CultureInfo.InvariantCulture));
     }
 
-    // 2. Проверяем, натуральные ли они (строго больше нуля)
-    if (numX <= 0 || numY <= 0)
-    {
-        return Results.Text("NaN");
-    }
-
-    // 3. Считаем НОК через функцию ниже
-    long lcm = CalculateLCM(numX, numY);
-
-    // 4. Возвращаем чистый текст, как просит задание
-    return Results.Text(lcm.ToString());
+    // Если что-то пошло не так, возвращаем ошибку, чтобы сразу это увидеть
+    context.Response.StatusCode = 400;
+    return context.Response.WriteAsync("Ошибка: передайте числа x и y");
 });
 
-app.Run();
-
-// --- ТВОЯ МАТЕМАТИКА (ПРОСТО ФУНКЦИИ) ---
-
-// Функция для поиска Наибольшего Общего Делителя (Алгоритм Евклида)
-long CalculateGCD(long a, long b)
+// Метод поиска НОД
+static double CalculateGCD(double a, double b)
 {
-    while (b != 0)
+    while (Math.Abs(b) > 0.000001)
     {
-        long temp = b;
+        double temp = b;
         b = a % b;
         a = temp;
     }
     return a;
 }
 
-// Функция для поиска Наименьшего Общего Кратного
-long CalculateLCM(long a, long b)
+// Метод поиска НОК
+static double CalculateLCM(double a, double b)
 {
-    return (a / CalculateGCD(a, b)) * b;
+    if (a == 0 || b == 0) return 0;
+    return Math.Abs(a * b) / CalculateGCD(a, b);
 }
+
+app.Run();
