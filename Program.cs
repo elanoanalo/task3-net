@@ -1,10 +1,16 @@
 var builder = WebApplication.CreateBuilder(args);
 var app = builder.Build();
 
-// .NET сам автоматически возьмет x и y из ссылки и переведет в double
-app.MapGet("/elano_95_mail_ru", (double x, double y) =>
+// Сделали параметры x? и y? необязательными (добавили знак вопроса)
+app.MapGet("/elano_95_mail_ru", (double? x, double? y) =>
 {
-    double lcm = CalculateLCM(x, y);
+    // Если Render или бот ломится без параметров, просто отдаем 0 и статус 200, чтобы сервер не падал
+    if (x == null || y == null)
+    {
+        return Results.Text("0", "text/plain", System.Text.Encoding.UTF8);
+    }
+
+    double lcm = CalculateLCM(x.Value, y.Value);
     return Results.Text(lcm.ToString(), "text/plain", System.Text.Encoding.UTF8);
 });
 
