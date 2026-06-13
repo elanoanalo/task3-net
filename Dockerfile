@@ -1,16 +1,16 @@
-FROM mcr.microsoft.com/dotnet/sdk:10.0 AS build
+FROM mcr.microsoft.com/dotnet/sdk:8.0 AS build
 WORKDIR /src
 
-# Копируем все файлы проекта
+# Копируем всё
 COPY . .
 
-# Восстанавливаем зависимости и собираем проект
+# Собираем
 RUN dotnet restore && \
     dotnet publish -c Release -o /app/publish
 
-FROM mcr.microsoft.com/dotnet/aspnet:10.0 AS final
+FROM mcr.microsoft.com/dotnet/aspnet:8.0 AS final
 WORKDIR /app
 COPY --from=build /app/publish .
 
-# Запуск приложения (убедись, что регистр букв в task3.dll совпадает с твоим проектом)
+# Запуск. Если в Visual Studio проект называется Task3 (с большой буквы), то измени на Task3.dll
 ENTRYPOINT ["dotnet", "task3.dll"]
